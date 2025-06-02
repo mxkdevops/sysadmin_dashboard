@@ -9,6 +9,35 @@
 - Multiple task outputs shown simultaneously with easy switching.
 - Styled with Bootstrap 5 for a clean, responsive UI.
 
+### 1️⃣ Install Flask
+Make sure Python 3 and pip are installed:
+```bash
+sudo apt update
+sudo apt install python3 python3-pip -y
+pip3 install flask
+```
+### 2️⃣ Create your Flask app folder and files
+```bash
+mkdir ~/sysadmin_dashboard
+cd ~/sysadmin_dashboard
+Create a file app.py:
+Create templates folder and HTML files
+Create templates/result.html:
+```
+### 4️⃣ Run your Flask app locally
+```bash
+python3 app.py
+Open your browser and go to:
+http://127.0.0.1:5000/
+```
+### 5️⃣ Notes:
+Some commands like sudo ufw status require sudo. You can configure /etc/sudoers to allow your user to run these commands without password, e.g.:
+sudo visudo
+# Add this line (replace username with your user):
+username ALL=(ALL) NOPASSWD: /usr/sbin/ufw
+You can add more tasks or adjust commands in TASKS dict in app.py.
+
+
 ### 🔍 1. Verify Flask is Listening on All Interfaces
 Ensure your Flask application is configured to listen on all network interfaces. In your app.py, modify the app.run() line as follows:
 ```bash
