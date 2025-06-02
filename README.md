@@ -1,4 +1,4 @@
-# sysadmin_dashboard
+# Web-Based Dashboard (Lightweight HTML + Bash Hooks) sysadmin_dashboard
 ### What this does:
 - Tasks show as Bootstrap buttons.
 - Clicking a task opens a tab (or focuses existing tab) with that task’s live output.
