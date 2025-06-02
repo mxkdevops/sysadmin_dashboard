@@ -11,13 +11,11 @@
 
 ### What Was Missing and How It Was Resolved:
 1. Flask binding to all network interfaces:
- changed Flask app to run with host='0.0.0.0', which made Flask listen on all IP addresses, not just localhost.
+   - changed Flask app to run with host='0.0.0.0', which made Flask listen on all IP addresses, not just localhost.
 
-2. Lightsail firewall rules:
+3. Lightsail firewall rules:
+-  opened port 5000 for incoming traffic, allowing your IP or all IPs (0.0.0.0/0) in the Lightsail instance’s firewall settings.
 
- opened port 5000 for incoming traffic, allowing your IP or all IPs (0.0.0.0/0) in the Lightsail instance’s firewall settings.
-
-3. Instance internal firewall (ufw):
-
- Lightsail instance had its own firewall (ufw) blocking port 5000.
- sudo ufw allow 5000/tcp to open port 5000 on the instance itself.
+4. Instance internal firewall (ufw):
+ - Lightsail instance had its own firewall (ufw) blocking port 5000.
+ -  sudo ufw allow 5000/tcp to open port 5000 on the instance itself.
