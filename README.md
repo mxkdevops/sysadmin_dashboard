@@ -9,6 +9,64 @@
 - Multiple task outputs shown simultaneously with easy switching.
 - Styled with Bootstrap 5 for a clean, responsive UI.
 
+### 🔍 1. Verify Flask is Listening on All Interfaces
+Ensure your Flask application is configured to listen on all network interfaces. In your app.py, modify the app.run() line as follows:
+```bash
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000, debug=True)
+```
+
+This change allows Flask to accept connections from any IP address, not just 127.0.0.1 (localhost).
+
+## 🔐 2. Check for Local Firewall Rules on the Lightsail Instance
+Even if AWS Lightsail's firewall allows traffic on port 5000, the instance's internal firewall (e.g., ufw or iptables) might block it. To check and modify these settings:
+
+For ufw (Uncomplicated Firewall):
+Check the status:
+```bash
+sudo ufw status
+If ufw is active and blocking port 5000, proceed to the next step.
+
+Allow traffic on port 5000:
+
+sudo ufw allow 5000/tcp
+Reload ufw to apply changes:
+
+sudo ufw reload
+For iptables:
+Allow traffic on port 5000:
+
+sudo iptables -A INPUT -p tcp --dport 5000 -j ACCEPT
+Save the iptables rules to ensure they persist after reboot:
+
+sudo iptables-save > /etc/iptables/rules.v4
+### 🔄 3. Restart Your Flask Application
+After making the above changes, restart your Flask application:
+
+python3 app.py
+Ensure it starts without errors and is listening on 0.0.0.0:5000.
+
+### 🌐 4. Access the Application from Your Local Browser
+In your local browser, navigate to:
+
+http://<your-lightsail-public-ip>:5000/
+Replace <your-lightsail-public-ip> with the actual public IP address of your Lightsail instance.
+
+### 🛠️ 5. Additional Debugging
+If you're still unable to access the application:
+Check if Flask is listening on port 5000:
+sudo netstat -tlnp | grep 5000
+or
+
+sudo ss -tlnp | grep 5000
+Ensure that Flask is indeed listening on 0.0.0.0:5000.
+
+Verify that no other service is occupying port 5000:
+
+sudo lsof -i :5000
+This command will list any processes using port 5000.
+
+
 ### What Was Missing and How It Was Resolved:
 1. Flask binding to all network interfaces:
    - changed Flask app to run with host='0.0.0.0', which made Flask listen on all IP addresses, not just localhost.
