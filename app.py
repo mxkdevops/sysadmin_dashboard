@@ -27,40 +27,72 @@ tasks = [
 ]
 
 def run_command(task):
-    commands = {
-        "Check CPU Usage": "top -bn1 | grep 'Cpu(s)'",
-        "Check Uptime": "uptime",
-        "Check Firewall Status": "sudo ufw status",
-        "Check SSH Status": "systemctl status ssh",
-        "Check Logins": "who",
+    import subprocess
+    import re
 
-        # 🔐 Security-focused tasks
-        "Check for Failed SSH Login Attempts": "sudo grep 'Failed password' /var/log/auth.log | tail -n 10",
-        "List Blocked IPs (via UFW/IPTables)": "sudo iptables -L -n --line-numbers",
-        "Check for Open Ports": "sudo ss -tuln",
-        "Verify Active UFW Rules": "sudo ufw show added",
-        "Check for Root Login Attempts": "sudo grep 'root' /var/log/auth.log | tail -n 10",
-        "List Recently Installed Packages": "grep 'install ' /var/log/dpkg.log | tail -n 10",
-        "Check for Users with Sudo Access": "getent group sudo",
-        "Scan for World-Writable Files": "sudo find / -type f -perm -0002 -exec ls -l {} + 2>/dev/null | head -n 10",
-        "Check for Suspicious Processes": "ps aux --sort=-%cpu | head -n 10",
-        "Check Cron Jobs for All Users": "for user in $(cut -f1 -d: /etc/passwd); do crontab -u $user -l 2>/dev/null; done",
-        "Monitor Auth Log for Brute Force Patterns": "sudo grep 'authentication failure' /var/log/auth.log | tail -n 10",
-        "Check if SSH Root Login is Disabled": "sudo grep '^PermitRootLogin' /etc/ssh/sshd_config",
-        "Check for Publicly Accessible Services": "sudo netstat -tulpn | grep '0.0.0.0'",
-        "Check for Known Vulnerabilities (via apt)": "apt list --upgradable 2>/dev/null | grep -v Listing | head -n 10",
-    }
+    def format_result(msg, status):
+        return msg, status
 
-    cmd = commands.get(task)
-    if not cmd:
-        return "Unknown task", "danger"
     try:
-        result = subprocess.check_output(cmd, shell=True, text=True)
-        return result, "success"
+        if task == "Check CPU Usage":
+            result = subprocess.check_output("top -bn1 | grep 'Cpu(s)'", shell=True, text=True)
+            usage = float(re.search(r'(\d+\.\d+)\s*id', result).group(1))
+            cpu_used = 100 - usage
+            if cpu_used > 80:
+                return format_result(f"⚠️ High CPU usage: {cpu_used:.1f}%", "warning")
+            return format_result(f"✅ CPU usage normal: {cpu_used:.1f}%", "success")
+
+        elif task == "Check Memory Usage":
+            result = subprocess.check_output("free -m", shell=True, text=True)
+            lines = result.splitlines()
+            mem = [int(x) for x in lines[1].split()[1:4]]
+            used_percent = (mem[1] / mem[0]) * 100
+            if used_percent > 80:
+                return format_result(f"⚠️ High memory usage: {used_percent:.1f}%", "warning")
+            return format_result(f"✅ Memory usage normal: {used_percent:.1f}%", "success")
+
+        elif task == "Check Firewall Status":
+            result = subprocess.check_output("sudo ufw status", shell=True, text=True)
+            if "inactive" in result.lower():
+                return format_result("❌ Firewall is INACTIVE", "danger")
+            return format_result("✅ Firewall is ACTIVE\n" + result, "success")
+
+        elif task == "Check SSH Status":
+            result = subprocess.check_output("systemctl is-active ssh", shell=True, text=True).strip()
+            if result == "active":
+                return format_result("✅ SSH is running", "success")
+            else:
+                return format_result("❌ SSH is not running", "danger")
+
+        elif task == "Check Logins":
+            result = subprocess.check_output("last -n 5", shell=True, text=True)
+            return format_result("✅ Last 5 login attempts:\n" + result, "success")
+
+        elif task == "Check Open Ports":
+            result = subprocess.check_output("sudo ss -tuln", shell=True, text=True)
+            risky_ports = []
+            for line in result.splitlines():
+                if re.search(r':23\b', line):  # Telnet
+                    risky_ports.append("⚠️ Telnet (23) is open")
+                elif re.search(r':21\b', line):  # FTP
+                    risky_ports.append("⚠️ FTP (21) is open")
+            summary = "\n".join(risky_ports) if risky_ports else "✅ No risky ports open"
+            return format_result(summary + "\n\n" + result, "warning" if risky_ports else "success")
+
+        elif task == "Check Failed Login Attempts":
+            result = subprocess.check_output("grep 'Failed password' /var/log/auth.log | tail -n 5", shell=True, text=True)
+            if result.strip():
+                return format_result("⚠️ Failed login attempts detected:\n" + result, "warning")
+            else:
+                return format_result("✅ No failed login attempts found", "success")
+
+        else:
+            return format_result("Unknown task", "danger")
+
     except subprocess.CalledProcessError as e:
-        return f"Command failed: {e}", "danger"
+        return format_result(f"Command failed: {e}", "danger")
     except Exception as e:
-        return f"Error: {e}", "danger"
+        return format_result(f"Error: {e}", "danger")
 
 @app.route('/')
 def index():
